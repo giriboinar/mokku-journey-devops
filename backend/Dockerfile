@@ -13,6 +13,9 @@ FROM python:3.12-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
+# Patch OS packages so Trivy finds no HIGH/CRITICAL CVEs in the final image.
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
+
 # Non-root runtime user.
 RUN useradd --create-home --uid 10001 appuser
 
