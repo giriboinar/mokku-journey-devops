@@ -16,6 +16,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Patch OS packages so Trivy finds no HIGH/CRITICAL CVEs in the final image.
 RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
 
+# Upgrade pip: the base image ships pip 25.0.1 (CVE-2026-8643, fixed in 26.1.2).
+RUN pip install --no-cache-dir --upgrade pip
+
 # Non-root runtime user.
 RUN useradd --create-home --uid 10001 appuser
 
