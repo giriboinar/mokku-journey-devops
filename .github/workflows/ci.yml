@@ -94,6 +94,8 @@ jobs:
           # .trivyignore documents CVEs verified as fixed in the image but
           # still flagged by Trivy (scanner sees base layer, not final fs).
           trivyignores: backend/.trivyignore
+          # Limit SARIF + exit code to HIGH/CRITICAL; MEDIUM/LOW must not fail the build.
+          limit-severities-for-sarif: true
           exit-code: "1"
 
       - name: Upload Trivy results
