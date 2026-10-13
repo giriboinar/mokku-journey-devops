@@ -8,14 +8,14 @@
 #
 #   cd ansible
 #   ansible-playbook -i inventory/hosts.yml playbook.yml \
-#     -e repo_url=https://github.com/<your-github-username>/mokku-journey-devops.git
+#     -e repo_url=https://github.com/giriboinar/mokku-journey-devops.git
 # ─────────────────────────────────────────────────────────────────────────────
 - name: Deploy Mokku Journey DevOps to EC2
   hosts: appservers
   become: true
 
   vars:
-    repo_url: "https://github.com/EXAMPLE/mokku-journey-devops.git"
+    repo_url: "https://github.com/giriboinar/mokku-journey-devops.git"
     compose_file: "docker-compose.prod.yml"
     app_dir: /opt/mokku-journey-devops
     compose_version: "v2.29.7"
@@ -71,3 +71,4 @@
     - name: Deployment summary
       ansible.builtin.debug:
         msg: "Mokku Journey DevOps is up — app: http://{{ ansible_host }}/  api: http://{{ ansible_host }}/api/health"
+

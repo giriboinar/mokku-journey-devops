@@ -1,6 +1,11 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Raja's Mokku Journey — Declarative CI/CD Pipeline
 //
+// NOTE: this Jenkinsfile is an OPTIONAL alternative. The primary CI/CD path
+// for this repo is GitHub Actions (.github/workflows/). Keep this file only
+// if you run your own Jenkins controller; otherwise the Actions workflows
+// above are the maintained path.
+//
 // Stages: Checkout → Validate → Install deps → Python tests → Java tests
 //         (optional) → Lint + dependency scan → Build images → Trivy scan
 //         → Push to ECR → Deploy staging → Smoke tests → Manual approval
@@ -289,3 +294,4 @@ pipeline {
 // IRSA) with least-privilege ECR push + EKS describe permissions. No static
 // AWS keys are used anywhere in this file.
 // ─────────────────────────────────────────────────────────────────────────────
+

@@ -5,7 +5,6 @@
 # (80): nginx serves the static frontend and proxies /api/* to the backend.
 #
 #   docker compose -f docker-compose.prod.yml up -d --build
-#   GRAFANA_PASSWORD=changeme docker compose -f docker-compose.prod.yml up -d --build
 # ─────────────────────────────────────────────────────────────────────────────
 name: mokku-journey-prod
 
@@ -17,9 +16,10 @@ services:
     environment:
       APP_ENV: prod
       APP_NAME: mokku-journey-devops
-      # NOTE: the backend currently allows all CORS origins (see backend/app/main.py).
-      # Passed here for documentation/future use.
-      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      # No CORS_ORIGINS here on purpose: in production nginx serves the
+      # frontend and proxies /api from the same origin, so browsers never
+      # make cross-origin requests. Set CORS_ORIGINS explicitly only if you
+      # serve the frontend from a different domain.
     expose:
       - "8000"   # internal only — reached via the nginx /api proxy
     healthcheck:
@@ -46,6 +46,10 @@ services:
     restart: unless-stopped
     networks: [mj-prod]
 
+  # NOTE: ports 9090 (Prometheus), 3000 (Grafana) and 9100 (node-exporter)
+  # are published here, but the AWS security group only opens them to
+  # var.monitoring_cidr (set it to YOUR IP — never 0.0.0.0/0). The app
+  # itself only needs port 80 public.
   prometheus:
     image: prom/prometheus:v2.53.0
     container_name: mokku-journey-prometheus
@@ -66,8 +70,11 @@ services:
     ports:
       - "3000:3000"
     environment:
-      # CHANGE THIS on first boot: GRAFANA_PASSWORD=<strong> docker compose ...
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      # Admin password comes from .env (see .env.example). The :?
+      # makes compose fail fast with a clear message if it is unset.
+      # No default is baked in — a public default password is how
+      # dashboards get hijacked.
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in your .env file (see .env.example)}
     volumes:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
       - grafana-data:/var/lib/grafana
@@ -90,3 +97,4 @@ networks:
 
 volumes:
   grafana-data:
+

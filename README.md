@@ -16,11 +16,11 @@ Helm, Prometheus, and Grafana.
 |---|---|
 | Web app | `http://<EC2_PUBLIC_IP>/` *(filled after deployment — see below)* |
 | API health | `http://<EC2_PUBLIC_IP>/api/health` |
-| Grafana | `http://<EC2_PUBLIC_IP>:3000` (default `admin` / `admin` — change it) |
+| Grafana | `http://<EC2_PUBLIC_IP>:3000` | admin login; password from your `.env` (`GRAFANA_ADMIN_PASSWORD`) |
 | Prometheus | `http://<EC2_PUBLIC_IP>:9090` |
-| GitHub repo | `https://github.com/<your-github-username>/mokku-journey-devops` |
+| GitHub repo | `https://github.com/giriboinar/mokku-journey-devops` |
 
-> Placeholders like `<EC2_PUBLIC_IP>` and `<your-github-username>` must be
+> Placeholders like `<EC2_PUBLIC_IP>` and `giriboinar` must be
 > replaced with your real values. Nothing here is pre-deployed.
 
 ## Project story
@@ -112,19 +112,43 @@ mokku-journey-devops/
 ## Quickstart (local)
 
 ```bash
-git clone https://github.com/<your-github-username>/mokku-journey-devops.git
+git clone https://github.com/giriboinar/mokku-journey-devops.git
 cd mokku-journey-devops
-docker compose up --build
-# App: http://localhost:8080   API: http://localhost:8000/api/health
 ```
 
-Production stack locally (mirrors EC2):
+**Development stack** — backend + frontend with live code mounting:
 
 ```bash
-GRAFANA_PASSWORD=<choose-a-password> docker compose -f docker-compose.prod.yml up -d --build
-# App: http://localhost/   Grafana: http://localhost:3000   Prometheus: http://localhost:9090
-./scripts/verify-deploy.sh 127.0.0.1   # ports 80/9090/3000 must be reachable
+docker compose up --build
 ```
+
+Open the app at http://localhost:8080 and the API health check at
+http://localhost:8000/api/health.
+
+**Production stack** — mirrors the EC2 deployment (nginx + backend +
+Prometheus + Grafana). Needs a `.env` file first:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and set `GRAFANA_ADMIN_PASSWORD` to a strong password, then:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Open the app at http://localhost/, Grafana at http://localhost:3000 and
+Prometheus at http://localhost:9090. Verify everything with:
+
+```bash
+./scripts/verify-deploy.sh 127.0.0.1
+```
+
+**Dev vs prod in one line:** `docker-compose.yml` is for coding (source files
+mounted live, ports per service); `docker-compose.prod.yml` is for running
+the real deployment (nginx reverse proxy on port 80, monitoring included,
+no live mounts).
 
 ## AWS Free Tier deployment
 
@@ -138,10 +162,10 @@ cd terraform/free-tier
 terraform init
 terraform plan \
   -var "key_name=mokku-key" \
-  -var "repo_url=https://github.com/<your-github-username>/mokku-journey-devops.git"
+  -var "repo_url=https://github.com/giriboinar/mokku-journey-devops.git"
 terraform apply \
   -var "key_name=mokku-key" \
-  -var "repo_url=https://github.com/<your-github-username>/mokku-journey-devops.git"
+  -var "repo_url=https://github.com/giriboinar/mokku-journey-devops.git"
 terraform output
 ```
 
@@ -161,7 +185,7 @@ edit `ansible/inventory/hosts.yml` with the Elastic IP and key path, then:
 ```bash
 cd ansible
 ansible-playbook -i inventory/hosts.yml playbook.yml \
-  -e repo_url=https://github.com/<your-github-username>/mokku-journey-devops.git
+  -e repo_url=https://github.com/giriboinar/mokku-journey-devops.git
 ```
 
 ## GitHub setup
@@ -169,7 +193,7 @@ ansible-playbook -i inventory/hosts.yml playbook.yml \
 1. Create an empty repo named **`mokku-journey-devops`** on GitHub.
 2. Push:
    ```bash
-   git remote add origin https://github.com/<your-github-username>/mokku-journey-devops.git
+   git remote add origin https://github.com/giriboinar/mokku-journey-devops.git
    git branch -M main
    git push -u origin main
    ```
@@ -188,7 +212,7 @@ ansible-playbook -i inventory/hosts.yml playbook.yml \
 
 **GitHub Actions OIDC setup (one time, for AWS deploys):**
 1. AWS Console → IAM → Identity providers → Add provider: `token.actions.githubusercontent.com`, audience `sts.amazonaws.com`.
-2. Create a role with trust policy allowing `sub: repo:<your-github-username>/mokku-journey-devops:*`; attach EC2/VPC permissions (lab: `AmazonEC2FullAccess`).
+2. Create a role with trust policy allowing `sub: repo:giriboinar/mokku-journey-devops:*`; attach EC2/VPC permissions (lab: `AmazonEC2FullAccess`).
 3. GitHub repo → Settings → Secrets and variables → Actions:
    - Secret `AWS_ROLE_TO_ASSUME` = role ARN
    - Secret `EC2_KEY_NAME` = your existing EC2 key pair name
@@ -224,7 +248,7 @@ the EC2 host itself by `docker compose up --build`.
 
 | Tool | URL | Notes |
 |---|---|---|
-| Grafana | `http://<EC2_PUBLIC_IP>:3000` | admin login; **change `GRAFANA_PASSWORD` on first boot** |
+| Grafana | `http://<EC2_PUBLIC_IP>:3000` | admin login; set `GRAFANA_ADMIN_PASSWORD` in `.env` before first boot (see `.env.example`) |
 | Prometheus | `http://<EC2_PUBLIC_IP>:9090` | targets: `prometheus`, `backend`, `node-exporter` |
 | Dashboard | "Mokku Journey — App Health" | auto-provisioned: backend up, req/s, p95 latency, RSS memory |
 
@@ -292,3 +316,4 @@ the Grafana data volume.
 ---
 
 *Built with devotion and DevOps. Govinda Govinda! 🙏*
+

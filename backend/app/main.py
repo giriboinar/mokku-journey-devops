@@ -1,10 +1,14 @@
 """Raja's Mokku Journey — FastAPI backend (API only).
 
-Serves the 16-stage devotional journey content as JSON. No secrets,
-credentials, or environment variables are used anywhere in this app.
+Serves the 16-stage devotional journey content as JSON.
+
+Configuration comes from environment variables (see README):
+  CORS_ORIGINS — comma-separated list of allowed browser origins.
+                 Defaults to local dev origins only.
 """
 
 import logging
+import os
 import time
 import uuid
 
@@ -24,10 +28,23 @@ app = FastAPI(
     description="API for the Tirumala Tirupati Venkateswara Swamy — Raja's Mokku Journey web app.",
 )
 
-# API-only service; CORS is wide open for local development.
+def _cors_origins() -> list:
+    """Allowed browser origins, from CORS_ORIGINS (comma-separated).
+
+    Defaults to local development origins only. In production nginx serves
+    the frontend and proxies /api from the same origin, so browsers make
+    no cross-origin requests and this list is effectively unused — but it
+    must never be "*" with credentials allowed.
+    """
+    raw = os.environ.get("CORS_ORIGINS", "http://localhost:8080,http://localhost:3000")
+    return [o.strip() for o in raw.split(",") if o.strip()]
+
+
+# API-only service. Origins are explicit — never a wildcard — so the
+# browser's same-origin policy actually protects the API.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -76,3 +93,4 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"error": "internal_error", "message": "An unexpected error occurred."},
     )
+
