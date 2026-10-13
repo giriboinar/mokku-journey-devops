@@ -83,15 +83,13 @@ jobs:
 
       - name: Diagnose installed Python packages
         run: |
-          docker run --rm raja-journey-backend:ci pip list 2>/dev/null | grep -iE "urllib3|msgpack|setuptools|^pip " || true
-          echo "--- all urllib3 dist-infos on filesystem ---"
-          docker run --rm raja-journey-backend:ci find / -name "urllib3-*.dist-info" -maxdepth 6 2>/dev/null || true
-          echo "--- all setuptools dist-infos on filesystem ---"
-          docker run --rm raja-journey-backend:ci find / -name "setuptools-*.dist-info" -maxdepth 6 2>/dev/null || true
-          echo "--- all msgpack dist-infos on filesystem ---"
-          docker run --rm raja-journey-backend:ci find / -name "msgpack-*.dist-info" -maxdepth 6 2>/dev/null || true
-          echo "--- python versions present ---"
-          docker run --rm raja-journey-backend:ci ls /usr/local/bin/python* /usr/bin/python* 2>/dev/null || true
+          echo "--- which python and pip ---"
+          docker run --rm raja-journey-backend:ci which python python3 pip 2>/dev/null || true
+          docker run --rm raja-journey-backend:ci python3 --version 2>/dev/null || true
+          echo "--- ALL site-packages dirs (no depth limit) ---"
+          docker run --rm raja-journey-backend:ci find / -type d -name "site-packages" 2>/dev/null || true
+          echo "--- ALL urllib3 dist-infos (no depth limit) ---"
+          docker run --rm raja-journey-backend:ci find / -name "urllib3-*.dist-info" 2>/dev/null || true
 
       - name: Trivy vulnerability scan (table, diagnostic)
         uses: aquasecurity/trivy-action@v0.36.0
