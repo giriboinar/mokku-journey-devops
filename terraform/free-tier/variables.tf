@@ -38,13 +38,12 @@ variable "compose_file" {
 }
 
 variable "ssh_allowed_cidr" {
-  description = "CIDR allowed to SSH (port 22). Default is open for lab convenience — set to your IP, e.g. 203.0.113.7/32."
+  description = "CIDR allowed to SSH (port 22). REQUIRED — no default. Use your own IP, e.g. 203.0.113.7/32. Never 0.0.0.0/0 for real use."
   type        = string
-  default     = "0.0.0.0/0"
 }
 
 variable "monitoring_cidr" {
-  description = "CIDR allowed to reach Grafana (3000) and Prometheus (9090). Restrict to your IP for real use."
+  description = "CIDR allowed to reach Grafana (3000) and Prometheus (9090). REQUIRED — no default. Use your own IP, e.g. 203.0.113.7/32. Never 0.0.0.0/0."
   type        = string
-  default     = "0.0.0.0/0"
 }
+
