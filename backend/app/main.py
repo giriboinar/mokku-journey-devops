@@ -1,0 +1,78 @@
+"""Raja's Mokku Journey — FastAPI backend (API only).
+
+Serves the 16-stage devotional journey content as JSON. No secrets,
+credentials, or environment variables are used anywhere in this app.
+"""
+
+import logging
+import time
+import uuid
+
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+from app.routes import health, stages
+from app.services.logging_config import configure_logging
+
+configure_logging()
+logger = logging.getLogger("raja_journey")
+
+app = FastAPI(
+    title="Raja's Mokku Journey Backend",
+    version="1.0.0",
+    description="API for the Tirumala Tirupati Venkateswara Swamy — Raja's Mokku Journey web app.",
+)
+
+# API-only service; CORS is wide open for local development.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(health.router, prefix="/api")
+app.include_router(stages.router, prefix="/api")
+
+# Prometheus metrics at /metrics. Guarded so the app always starts,
+# even if the instrumentation package is unavailable.
+try:
+    from prometheus_fastapi_instrumentator import Instrumentator
+
+    Instrumentator().instrument(app).expose(app)
+except Exception:
+    pass
+
+
+@app.middleware("http")
+async def request_logging(request: Request, call_next):
+    request_id = str(uuid.uuid4())
+    start = time.perf_counter()
+    logger.info(
+        "request started",
+        extra={"request_id": request_id, "method": request.method, "path": request.url.path},
+    )
+    response = await call_next(request)
+    elapsed_ms = round((time.perf_counter() - start) * 1000, 2)
+    logger.info(
+        "request finished",
+        extra={
+            "request_id": request_id,
+            "method": request.method,
+            "path": request.url.path,
+            "status": response.status_code,
+            "elapsed_ms": elapsed_ms,
+        },
+    )
+    return response
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logger.exception("unhandled error", extra={"path": request.url.path})
+    return JSONResponse(
+        status_code=500,
+        content={"error": "internal_error", "message": "An unexpected error occurred."},
+    )
