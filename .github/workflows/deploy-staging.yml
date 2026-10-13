@@ -1,0 +1,99 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Deploy to STAGING — runs on every push to main
+# AWS auth: OIDC role assumption (no static keys).
+# Configure: repository secret AWS_ROLE_ARN (role with ECR + EKS deploy rights),
+#            repository variable AWS_REGION (e.g. ap-south-1).
+# ─────────────────────────────────────────────────────────────────────────────
+name: Deploy — staging
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write   # required for OIDC → AWS
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  ECR_BACKEND_REPO: raja-journey-backend
+  EKS_CLUSTER: raja-journey-staging
+  HELM_RELEASE: raja-journey
+  NAMESPACE: raja-journey-staging
+
+jobs:
+  build-and-push:
+    name: Build & push backend image
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute image tag
+        id: tag
+        run: echo "tag=$(git rev-parse --short HEAD)-${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          docker build -t "$REGISTRY/$ECR_BACKEND_REPO:$TAG" -f backend/Dockerfile backend/
+          docker push "$REGISTRY/$ECR_BACKEND_REPO:$TAG"
+
+  deploy:
+    name: Helm deploy to staging EKS
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name "$EKS_CLUSTER" --region "$AWS_REGION"
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.15.0
+
+      - name: Helm upgrade
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          TAG: ${{ needs.build-and-push.outputs.image_tag }}
+        run: |
+          helm upgrade --install "$HELM_RELEASE" helm/raja-journey \
+            --namespace "$NAMESPACE" --create-namespace \
+            -f helm/raja-journey/values-staging.yaml \
+            --set image.repository="$REGISTRY/$ECR_BACKEND_REPO" \
+            --set image.tag="$TAG" \
+            --wait --timeout 10m
+
+      - name: Smoke tests
+        run: |
+          chmod +x scripts/smoke-test.sh
+          SVC_HOST=$(kubectl -n "$NAMESPACE" get svc "$HELM_RELEASE" \
+                     -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          BASE_URL="http://${SVC_HOST}" ./scripts/smoke-test.sh

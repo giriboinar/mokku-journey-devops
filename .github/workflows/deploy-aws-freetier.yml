@@ -1,0 +1,79 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Mokku Journey DevOps — Deploy to AWS Free Tier (Terraform on EC2).
+#
+# ONE-TIME SETUP (all in AWS Console + GitHub repo settings):
+#   1. AWS: create an IAM OIDC identity provider for token.actions.githubusercontent.com
+#      (audience sts.amazonaws.com), then an IAM role whose trust policy allows
+#      your repo (sub: repo:<owner>/<repo>:*) to assume it. Grant the role EC2 +
+#      VPC + EIP permissions (AmazonEC2FullAccess is the simple lab option).
+#      See the root README "CI/CD → GitHub Actions OIDC setup" for the policy.
+#   2. GitHub: Settings → Secrets and variables → Actions:
+#        Secret   AWS_ROLE_TO_ASSUME = the role ARN from step 1
+#        Secret   EC2_KEY_NAME       = name of an EXISTING EC2 key pair in the region
+#        Variable AWS_REGION         = e.g. ap-south-1 (default used if unset)
+#   3. Replace the default repo_url: this workflow derives it automatically
+#      from github.server_url + github.repository.
+#
+# NO long-lived AWS access keys are used anywhere (OIDC only).
+# Triggers: manual (workflow_dispatch) or any push to main that touches
+# terraform/free-tier/**.
+# ─────────────────────────────────────────────────────────────────────────────
+name: Deploy — AWS Free Tier
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "terraform/free-tier/**"
+
+permissions:
+  contents: read
+  id-token: write   # required for OIDC → AWS
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION || 'ap-south-1' }}
+  TF_DIR: terraform/free-tier
+
+jobs:
+  deploy:
+    name: Terraform apply (EC2 Free Tier)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - name: Terraform init
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform init
+
+      - name: Terraform plan
+        working-directory: ${{ env.TF_DIR }}
+        run: >
+          terraform plan -out=tfplan
+          -var "key_name=${{ secrets.EC2_KEY_NAME }}"
+          -var "repo_url=${{ github.server_url }}/${{ github.repository }}.git"
+
+      - name: Terraform apply
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform apply -auto-approve tfplan
+
+      - name: Show outputs (app URL, monitoring URLs)
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform output
+
+      - name: Verify deployment
+        run: |
+          chmod +x scripts/verify-deploy.sh
+          IP="$(terraform -chdir=${{ env.TF_DIR }} output -raw public_ip)"
+          ./scripts/verify-deploy.sh "$IP"

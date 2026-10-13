@@ -1,0 +1,83 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Deploy to PRODUCTION — manual trigger only + environment protection approval.
+#
+# Setup (one time):
+#   1. Repository secret  AWS_ROLE_ARN  — IAM role ARN for OIDC (ECR + EKS).
+#   2. Repository variable AWS_REGION   — e.g. ap-south-1.
+#   3. GitHub Environment "production"  — Settings → Environments → production:
+#        • Required reviewers: add 1+ approvers (manual approval gate).
+#        • Deployment branches: restrict to main.
+# ─────────────────────────────────────────────────────────────────────────────
+name: Deploy — production
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Backend image tag to promote (e.g. abc1234-56)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write   # required for OIDC → AWS
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  ECR_BACKEND_REPO: raja-journey-backend
+  EKS_CLUSTER: raja-journey-production
+  HELM_RELEASE: raja-journey
+  NAMESPACE: raja-journey
+
+jobs:
+  deploy:
+    name: Helm deploy to production EKS
+    runs-on: ubuntu-latest
+    environment: production   # ← manual approval gate lives here
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name "$EKS_CLUSTER" --region "$AWS_REGION"
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.15.0
+
+      - name: Helm upgrade
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          TAG: ${{ inputs.image_tag }}
+        run: |
+          helm upgrade --install "$HELM_RELEASE" helm/raja-journey \
+            --namespace "$NAMESPACE" --create-namespace \
+            -f helm/raja-journey/values-production.yaml \
+            --set image.repository="$REGISTRY/$ECR_BACKEND_REPO" \
+            --set image.tag="$TAG" \
+            --wait --timeout 10m
+          kubectl -n "$NAMESPACE" rollout status "deploy/$HELM_RELEASE" --timeout=5m
+
+      - name: Smoke tests
+        run: |
+          chmod +x scripts/smoke-test.sh
+          SVC_HOST=$(kubectl -n "$NAMESPACE" get svc "$HELM_RELEASE" \
+                     -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          BASE_URL="http://${SVC_HOST}" ./scripts/smoke-test.sh
+
+      - name: Rollback on smoke-test failure
+        if: failure()
+        run: |
+          echo "Smoke tests failed — rolling back production release."
+          helm history "$HELM_RELEASE" -n "$NAMESPACE" || true
+          helm rollback "$HELM_RELEASE" -n "$NAMESPACE" || true
