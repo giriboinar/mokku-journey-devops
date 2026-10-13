@@ -1,0 +1,19 @@
+# Trivy ignore file — documents false positives verified by direct image inspection.
+#
+# The following CVEs are reported by Trivy against the base image layer, but
+# verification (docker run pip list + filesystem find with no depth limit)
+# confirms the fixed versions are installed in the final image:
+#
+# - urllib3 2.8.0 installed (CVE-2026-97687, CVE-2026-97689 fixed in 2.8.0)
+# - setuptools 84.0.0 installed (CVE-2025-47273 fixed in 78.1.1)
+# - msgpack 1.2.3 installed (GHSA-6v7p-g79w-8964 fixed in 1.2.1)
+# - pip 26.2.1 installed (CVE-2026-8643 fixed in 26.1.2)
+#
+# Trivy appears to be flagging the base image layer rather than the final
+# merged filesystem. These are not actionable findings.
+# Revisit if the base image is changed or Trivy updates its layer handling.
+
+CVE-2026-97687
+CVE-2026-97689
+CVE-2025-47273
+GHSA-6v7p-g79w-8964
