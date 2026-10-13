@@ -2,6 +2,9 @@ fastapi==0.143.0
 uvicorn[standard]==0.54.0
 pydantic==2.14.1
 prometheus-fastapi-instrumentator==8.1.0
+# Pinned minimums to clear Trivy HIGH findings in transitive dependencies.
+urllib3>=2.8.0  # CVE-2026-97689, CVE-2026-97687
+msgpack>=1.2.1  # GHSA-6v7p-g79w-8964
 # test dependencies
 pytest==9.1.1
 httpx==0.28.1
