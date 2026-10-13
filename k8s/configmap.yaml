@@ -1,0 +1,13 @@
+# Non-secret configuration only. Real secrets: AWS Secrets Manager /
+# External Secrets Operator — never commit them here.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: raja-journey-config
+  labels:
+    app.kubernetes.io/name: raja-journey
+data:
+  APP_NAME: "raja-journey"
+  APP_ENV: "production"
+  LOG_LEVEL: "info"
+  STAGE_DATA_PATH: "/app/data/stages.json"

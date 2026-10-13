@@ -1,0 +1,26 @@
+# Requires the AWS Load Balancer Controller (see terraform/modules/alb-ingress).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: raja-journey
+  labels:
+    app.kubernetes.io/name: raja-journey
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    # alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:<REGION>:<ACCOUNT_ID>:certificate/<CERT_ID>"
+spec:
+  ingressClassName: alb
+  rules:
+    - host: journey.example.com   # ← replace with your domain
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: raja-journey
+                port:
+                  number: 80
