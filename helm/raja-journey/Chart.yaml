@@ -1,0 +1,15 @@
+apiVersion: v2
+name: raja-journey
+description: Raja's Mokku Journey — Tirumala pilgrimage interactive web app (FastAPI backend)
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - devops
+  - fastapi
+  - pilgrimage
+maintainers:
+  - name: Raja
+home: https://github.com/<GITHUB_ORG>/tirumala-rajas-mokku-journey
+sources:
+  - https://github.com/<GITHUB_ORG>/tirumala-rajas-mokku-journey

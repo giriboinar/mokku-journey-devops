@@ -1,0 +1,73 @@
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# Mokku Journey DevOps — Ansible deployment playbook (EC2 / Amazon Linux 2023).
+#
+# Provisions nothing — use terraform/free-tier for the infrastructure. This
+# playbook configures an existing EC2 instance and deploys the app with
+# docker compose. Idempotent: safe to re-run (git pull + compose up).
+#
+#   cd ansible
+#   ansible-playbook -i inventory/hosts.yml playbook.yml \
+#     -e repo_url=https://github.com/<your-github-username>/mokku-journey-devops.git
+# ─────────────────────────────────────────────────────────────────────────────
+- name: Deploy Mokku Journey DevOps to EC2
+  hosts: appservers
+  become: true
+
+  vars:
+    repo_url: "https://github.com/EXAMPLE/mokku-journey-devops.git"
+    compose_file: "docker-compose.prod.yml"
+    app_dir: /opt/mokku-journey-devops
+    compose_version: "v2.29.7"
+
+  tasks:
+    - name: Install Docker and Git (Amazon Linux)
+      ansible.builtin.dnf:
+        name:
+          - docker
+          - git
+        state: present
+
+    - name: Ensure Docker is enabled and started
+      ansible.builtin.systemd:
+        name: docker
+        enabled: true
+        state: started
+
+    - name: Install Docker Compose v2 plugin
+      ansible.builtin.get_url:
+        # ansible_architecture reports x86_64 / aarch64, matching release names.
+        url: "https://github.com/docker/compose/releases/download/v{{ compose_version }}/docker-compose-linux-{{ ansible_architecture }}"
+        dest: /usr/libexec/docker/cli-plugins/docker-compose
+        mode: "0755"
+
+    - name: Clone or update the repository
+      ansible.builtin.git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        version: main
+        update: true
+
+    - name: Build and start the production stack
+      ansible.builtin.shell:
+        cmd: docker compose -f {{ compose_file }} up -d --build
+        chdir: "{{ app_dir }}"
+      changed_when: true
+
+    - name: Wait for HTTP port 80
+      ansible.builtin.wait_for:
+        port: 80
+        timeout: 180
+
+    - name: Wait for the API health endpoint
+      ansible.builtin.uri:
+        url: http://localhost/api/health
+        status_code: 200
+      register: health
+      until: health.status == 200
+      retries: 30
+      delay: 10
+
+    - name: Deployment summary
+      ansible.builtin.debug:
+        msg: "Mokku Journey DevOps is up — app: http://{{ ansible_host }}/  api: http://{{ ansible_host }}/api/health"

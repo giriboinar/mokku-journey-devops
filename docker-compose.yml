@@ -1,0 +1,77 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Raja's Mokku Journey — local development stack
+#
+#   docker compose up            # start backend + frontend (static)
+#   docker compose --profile java up   # also start the optional Java service
+#   docker compose down
+# ─────────────────────────────────────────────────────────────────────────────
+name: raja-journey
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: runtime
+    image: raja-journey-backend:local
+    container_name: raja-journey-backend
+    ports:
+      - "8000:8000"
+    environment:
+      APP_NAME: raja-journey
+      APP_ENV: local
+      LOG_LEVEL: info
+      STAGE_DATA_PATH: /app/data/stages.json
+      # Frontend talks to the API through this origin when running locally.
+      CORS_ORIGINS: "http://localhost:8080,http://localhost:3000"
+    volumes:
+      # Mount stage content for live editing without rebuilding.
+      - ./backend/app/data:/app/data:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks: [raja-net]
+
+  # Optional Java/Maven service (DevOps demonstration module).
+  # Enabled only with: docker compose --profile java up
+  java-service:
+    profiles: ["java"]
+    build:
+      context: ./java-service
+      dockerfile: Dockerfile
+    image: raja-journey-java-service:local
+    container_name: raja-journey-java-service
+    ports:
+      - "8081:8080"
+    environment:
+      SERVER_PORT: 8080
+      SPRING_PROFILES_ACTIVE: local
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/health')"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks: [raja-net]
+
+  # Serves the static frontend locally (vanilla HTML/CSS/JS, no build step).
+  frontend:
+    image: nginx:1.27-alpine
+    container_name: raja-journey-frontend
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks: [raja-net]
+
+networks:
+  raja-net:
+    driver: bridge
