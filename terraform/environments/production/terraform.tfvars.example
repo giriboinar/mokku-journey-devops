@@ -1,0 +1,10 @@
+# Copy to terraform.tfvars and fill in (NEVER commit terraform.tfvars).
+project            = "raja-journey"
+region             = "ap-south-1"
+vpc_cidr           = "10.2.0.0/16"
+cluster_name       = "raja-journey-production"
+kubernetes_version = "1.32"
+node_instance_types = ["t3.large"]
+
+# Also update the backend "s3" bucket in main.tf:
+#   bucket = "raja-journey-tfstate-<ACCOUNT_ID>-ap-south-1"
