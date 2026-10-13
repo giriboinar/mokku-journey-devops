@@ -5,3 +5,9 @@ prometheus-fastapi-instrumentator==8.1.0
 # test dependencies
 pytest==9.1.1
 httpx==0.28.1
+# Pinned transitive dependencies: the CI Trivy scan fails the build on
+# HIGH/CRITICAL CVEs found in the built image. These are pinned to versions
+# with published fixes (verified clean with pip-audit on 2026-10-13).
+urllib3==2.8.0
+msgpack==1.2.3
+setuptools==83.0.0
