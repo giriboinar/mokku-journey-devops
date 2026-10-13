@@ -84,7 +84,14 @@ jobs:
       - name: Diagnose installed Python packages
         run: |
           docker run --rm raja-journey-backend:ci pip list 2>/dev/null | grep -iE "urllib3|msgpack|setuptools|^pip " || true
-          docker run --rm raja-journey-backend:ci ls /usr/local/lib/python3.12/site-packages/ | grep -iE "urllib3|msgpack|setuptools" || true
+          echo "--- all urllib3 dist-infos on filesystem ---"
+          docker run --rm raja-journey-backend:ci find / -name "urllib3-*.dist-info" -maxdepth 6 2>/dev/null || true
+          echo "--- all setuptools dist-infos on filesystem ---"
+          docker run --rm raja-journey-backend:ci find / -name "setuptools-*.dist-info" -maxdepth 6 2>/dev/null || true
+          echo "--- all msgpack dist-infos on filesystem ---"
+          docker run --rm raja-journey-backend:ci find / -name "msgpack-*.dist-info" -maxdepth 6 2>/dev/null || true
+          echo "--- python versions present ---"
+          docker run --rm raja-journey-backend:ci ls /usr/local/bin/python* /usr/bin/python* 2>/dev/null || true
 
       - name: Trivy vulnerability scan (table, diagnostic)
         uses: aquasecurity/trivy-action@v0.36.0
