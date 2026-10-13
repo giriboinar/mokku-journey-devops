@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Raja's Mokku Journey — an interactive devotional story of a B.Tech graduate's pilgrimage from Muddanur to Tirumala to fulfil his vow to Lord Venkateswara Swamy.">
+  <meta name="theme-color" content="#0f1b3d">
+  <title>Raja's Mokku Journey — From Muddanur to Tirumala</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <a class="skip-link sr-only" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="brand">
+      <span class="brand-om" aria-hidden="true">&#x0950;</span>
+      <h1 id="app-title">Raja's Mokku Journey</h1>
+    </div>
+    <div class="header-actions">
+      <button id="lang-toggle" class="btn" type="button" aria-label="Switch to Telugu">&#x0c24;&#x0c46;&#x0c32;&#x0c41;&#x0c17;&#x0c41;</button>
+      <button id="music-toggle" class="btn" type="button" aria-pressed="false" aria-label="Toggle background music">Music: Off</button>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- ================= Landing view ================= -->
+    <div id="view-landing">
+      <section class="hero" aria-label="Journey introduction">
+        <div id="hero-media" class="hero-media" role="img" aria-label="Raja celebrating his B.Tech graduation"></div>
+        <div class="hero-overlay">
+          <h2 id="hero-title">Raja's Mokku Journey</h2>
+          <p id="tagline">From Muddanur to Tirumala — a vow fulfilled</p>
+          <div><button id="start-btn" class="btn btn-primary" type="button">Begin the Journey</button></div>
+        </div>
+      </section>
+
+      <section aria-labelledby="timeline-title">
+        <div class="section-head">
+          <h2 id="timeline-title">Journey Timeline</h2>
+          <p id="timeline-sub">Tap any stage to open its scene.</p>
+        </div>
+        <div id="timeline" class="timeline" role="list"></div>
+      </section>
+
+      <section aria-labelledby="route-title">
+        <div class="section-head">
+          <h2 id="route-title">Pilgrimage Route</h2>
+          <p id="route-sub">Tap a stop to jump to its stage.</p>
+        </div>
+        <div class="route-card">
+          <svg id="route-svg" viewBox="0 0 560 240" role="img" aria-label="Illustrated pilgrimage route map"></svg>
+        </div>
+      </section>
+    </div>
+
+    <!-- ================= Scene view ================= -->
+    <div id="view-scene" hidden>
+      <p id="scene-live" class="sr-only" aria-live="polite"></p>
+      <div class="scene-top">
+        <button id="back-btn" class="btn" type="button">Back to Journey</button>
+        <div class="progress">
+          <span id="progress-label">Stage 1 of 16</span>
+          <div class="progress-bar" role="progressbar" aria-label="Journey progress" aria-valuemin="1" aria-valuemax="16" aria-valuenow="1">
+            <div id="progress-fill"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="scene-layout">
+        <div id="scene-media" class="scene-media"></div>
+        <article class="scene-body" aria-labelledby="scene-title">
+          <span id="scene-tag"></span>
+          <h2 id="scene-title" tabindex="-1"></h2>
+          <p id="scene-desc"></p>
+          <p id="scene-caption" hidden></p>
+
+          <div id="milestones" hidden></div>
+
+          <div class="scene-nav">
+            <button id="prev-btn" class="btn" type="button" aria-label="Previous stage"><span>Previous Stage</span></button>
+            <button id="next-btn" class="btn" type="button" aria-label="Next stage"><span>Next Stage</span></button>
+            <span class="spacer"></span>
+            <button id="watchall-btn" class="btn" type="button">Watch All Stages</button>
+            <span id="auto-note" hidden></span>
+          </div>
+
+          <div id="finale" hidden>
+            <p id="finale-msg"></p>
+            <button id="replay-btn" class="btn btn-primary" type="button">Replay My Journey</button>
+          </div>
+        </article>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <span class="fb-om" aria-hidden="true">&#x0950;</span>
+    <p id="footer-note">May Lord Venkateswara Swamy bless every sincere vow.</p>
+  </footer>
+
+  <noscript>
+    <p style="text-align:center;padding:2rem">This interactive journey needs JavaScript to run. Please enable JavaScript to experience Raja's story.</p>
+  </noscript>
+
+  <script src="js/journey.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
