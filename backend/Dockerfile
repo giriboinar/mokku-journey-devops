@@ -16,9 +16,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Patch OS packages so Trivy finds no HIGH/CRITICAL CVEs in the final image.
 RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip and setuptools: base image ships pip 25.0.1 (CVE-2026-8643)
-# and setuptools 70.3.0 (CVE-2025-47273); both have published fixes.
-RUN pip install --no-cache-dir --upgrade pip setuptools
+# Upgrade packages with known CVEs to fixed versions. Done here (not just
+# via requirements.txt) so pip properly uninstalls any vulnerable copies
+# already present in the base image layers.
+RUN pip install --no-cache-dir --upgrade pip setuptools "urllib3>=2.8.0" "msgpack>=1.2.1"
 
 # Non-root runtime user.
 RUN useradd --create-home --uid 10001 appuser
