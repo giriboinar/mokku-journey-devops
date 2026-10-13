@@ -96,7 +96,7 @@ resource "aws_eks_node_group" "main" {
   node_role_arn   = aws_iam_role.nodes.arn
   subnet_ids      = var.private_subnet_ids
   instance_types  = var.node_instance_types
-  capacity_type   = var.node_capacity_type   # ON_DEMAND or SPOT
+  capacity_type   = var.node_capacity_type # ON_DEMAND or SPOT
   ami_type        = "AL2023_x86_64_STANDARD"
   tags            = local.common_tags
 

@@ -82,8 +82,8 @@ resource "aws_cloudwatch_dashboard" "main" {
         width  = 12
         height = 6
         properties = {
-          title   = "ALB request count & 5xx"
-          region  = var.region
+          title  = "ALB request count & 5xx"
+          region = var.region
           metrics = [
             ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", var.alb_arn_suffix],
             [".", "HTTPCode_Target_5XX_Count", ".", "."]
@@ -99,8 +99,8 @@ resource "aws_cloudwatch_dashboard" "main" {
         width  = 12
         height = 6
         properties = {
-          title   = "EKS node CPU / memory"
-          region  = var.region
+          title  = "EKS node CPU / memory"
+          region = var.region
           metrics = [
             ["AWS/EC2", "CPUUtilization", "ClusterName", var.cluster_name],
             ["ContainerInsights", "node_memory_utilization", "ClusterName", var.cluster_name]

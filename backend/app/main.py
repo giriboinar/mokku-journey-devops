@@ -36,14 +36,14 @@ app.add_middleware(
 app.include_router(health.router, prefix="/api")
 app.include_router(stages.router, prefix="/api")
 
-# Prometheus metrics at /metrics. Guarded so the app always starts,
-# even if the instrumentation package is unavailable.
+# Prometheus metrics at /metrics. Optional dependency: skipped cleanly
+# with a warning when the instrumentation package is not installed.
 try:
     from prometheus_fastapi_instrumentator import Instrumentator
-
+except ImportError:
+    logger.warning("prometheus_fastapi_instrumentator not installed; /metrics disabled")
+else:
     Instrumentator().instrument(app).expose(app)
-except Exception:
-    pass
 
 
 @app.middleware("http")

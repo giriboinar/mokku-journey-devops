@@ -66,18 +66,18 @@ module "vpc" {
 }
 
 module "eks" {
-  source                 = "../../modules/eks"
-  project                = var.project
-  environment            = "dev"
-  cluster_name           = var.cluster_name
-  kubernetes_version     = var.kubernetes_version
-  private_subnet_ids     = module.vpc.private_subnet_ids
+  source                  = "../../modules/eks"
+  project                 = var.project
+  environment             = "dev"
+  cluster_name            = var.cluster_name
+  kubernetes_version      = var.kubernetes_version
+  private_subnet_ids      = module.vpc.private_subnet_ids
   nodes_security_group_id = module.vpc.nodes_security_group_id
-  node_instance_types    = var.node_instance_types
-  node_capacity_type     = "SPOT" # dev: SPOT for cost saving
-  node_desired_size      = 1
-  node_min_size          = 1
-  node_max_size          = 2
+  node_instance_types     = var.node_instance_types
+  node_capacity_type      = "SPOT" # dev: SPOT for cost saving
+  node_desired_size       = 1
+  node_min_size           = 1
+  node_max_size           = 2
 }
 
 module "ecr" {
@@ -98,22 +98,22 @@ module "alb_ingress" {
 }
 
 module "monitoring" {
-  source        = "../../modules/monitoring"
-  project       = var.project
-  environment   = "dev"
-  region        = var.region
-  cluster_name  = module.eks.cluster_name
+  source             = "../../modules/monitoring"
+  project            = var.project
+  environment        = "dev"
+  region             = var.region
+  cluster_name       = module.eks.cluster_name
   log_retention_days = 7
 }
 
 module "iam" {
-  source                 = "../../modules/iam"
-  project                = var.project
-  environment            = "dev"
-  ecr_repository_arns    = values(module.ecr.repository_arns)
-  eks_cluster_arn        = "arn:aws:eks:${var.region}:<ACCOUNT_ID>:cluster/${module.eks.cluster_name}"
-  log_group_arn          = module.monitoring.log_group_arn
-  eks_oidc_provider_arn  = module.eks.oidc_provider_arn
-  eks_oidc_issuer        = module.eks.cluster_oidc_issuer
-  app_namespace          = "raja-journey-dev"
+  source                = "../../modules/iam"
+  project               = var.project
+  environment           = "dev"
+  ecr_repository_arns   = values(module.ecr.repository_arns)
+  eks_cluster_arn       = "arn:aws:eks:${var.region}:<ACCOUNT_ID>:cluster/${module.eks.cluster_name}"
+  log_group_arn         = module.monitoring.log_group_arn
+  eks_oidc_provider_arn = module.eks.oidc_provider_arn
+  eks_oidc_issuer       = module.eks.cluster_oidc_issuer
+  app_namespace         = "raja-journey-dev"
 }
