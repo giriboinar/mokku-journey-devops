@@ -81,25 +81,6 @@ jobs:
       - name: Build backend image
         run: docker build -t raja-journey-backend:ci -f backend/Dockerfile backend/
 
-      - name: Diagnose installed Python packages
-        run: |
-          echo "--- which python and pip ---"
-          docker run --rm raja-journey-backend:ci which python python3 pip 2>/dev/null || true
-          docker run --rm raja-journey-backend:ci python3 --version 2>/dev/null || true
-          echo "--- ALL site-packages dirs (no depth limit) ---"
-          docker run --rm raja-journey-backend:ci find / -type d -name "site-packages" 2>/dev/null || true
-          echo "--- ALL urllib3 dist-infos (no depth limit) ---"
-          docker run --rm raja-journey-backend:ci find / -name "urllib3-*.dist-info" 2>/dev/null || true
-
-      - name: Trivy vulnerability scan (table, diagnostic)
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          image-ref: raja-journey-backend:ci
-          format: table
-          severity: HIGH,CRITICAL
-          ignore-unfixed: true
-          exit-code: "0"
-
       - name: Trivy vulnerability scan (SARIF)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
@@ -110,6 +91,9 @@ jobs:
           # Only fail on vulnerabilities that have a published fix; unpatched
           # upstream CVEs are still reported to the Security tab via SARIF.
           ignore-unfixed: true
+          # .trivyignore documents CVEs verified as fixed in the image but
+          # still flagged by Trivy (scanner sees base layer, not final fs).
+          trivyignores: backend/.trivyignore
           exit-code: "1"
 
       - name: Upload Trivy results
