@@ -82,7 +82,7 @@ jobs:
         run: docker build -t raja-journey-backend:ci -f backend/Dockerfile backend/
 
       - name: Trivy vulnerability scan (SARIF)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.36.0
         with:
           image-ref: raja-journey-backend:ci
           format: sarif
@@ -113,10 +113,14 @@ jobs:
       - name: Helm template (staging values)
         run: helm template raja-journey helm/raja-journey -f helm/raja-journey/values-staging.yaml --namespace raja-journey-staging | head -50
 
+      - name: Install kubeconform
+        run: |
+          curl -sL -o /tmp/kubeconform.tar.gz "https://github.com/yannh/kubeconform/releases/download/v0.7.0/kubeconform-linux-amd64.tar.gz"
+          tar -xzf /tmp/kubeconform.tar.gz -C /tmp
+          sudo mv /tmp/kubeconform /usr/local/bin/kubeconform
+
       - name: kubeconform validate
-        uses: instrumenta/kubeconform-action@v0.0.1
-        with:
-          files: k8s/
+        run: kubeconform -strict -summary k8s/
 
   terraform-validate:
     name: Terraform — fmt & validate
