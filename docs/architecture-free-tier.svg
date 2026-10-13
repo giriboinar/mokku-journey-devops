@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Mokku Journey DevOps — Free Tier architecture (AWS, single EC2 t3.micro) -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="640" viewBox="0 0 1000 640" font-family="sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#555"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1000" height="640" fill="#f7f9fc"/>
+
+  <text x="500" y="34" text-anchor="middle" font-size="22" font-weight="bold" fill="#1a1a2e">Mokku Journey DevOps — AWS Free Tier Architecture</text>
+
+  <!-- Developer / GitHub -->
+  <g>
+    <rect x="30" y="70" width="220" height="120" rx="10" fill="#ffffff" stroke="#2b6cb0" stroke-width="2"/>
+    <text x="140" y="100" text-anchor="middle" font-size="14" font-weight="bold" fill="#2b6cb0">Developer / GitHub</text>
+    <text x="140" y="122" text-anchor="middle" font-size="12" fill="#333">mokku-journey-devops repo</text>
+    <text x="140" y="140" text-anchor="middle" font-size="12" fill="#333">Actions: CI build + test</text>
+    <text x="140" y="158" text-anchor="middle" font-size="12" fill="#333">deploy-aws-freetier.yml</text>
+    <text x="140" y="176" text-anchor="middle" font-size="12" fill="#333">Jenkinsfile (local docker)</text>
+  </g>
+
+  <!-- Terraform -->
+  <g>
+    <rect x="30" y="230" width="220" height="90" rx="10" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+    <text x="140" y="258" text-anchor="middle" font-size="14" font-weight="bold" fill="#7c3aed">Terraform</text>
+    <text x="140" y="280" text-anchor="middle" font-size="12" fill="#333">terraform/free-tier/</text>
+    <text x="140" y="298" text-anchor="middle" font-size="12" fill="#333">provisions VPC / SG / EC2 / EIP</text>
+  </g>
+
+  <!-- Ansible -->
+  <g>
+    <rect x="30" y="360" width="220" height="90" rx="10" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+    <text x="140" y="388" text-anchor="middle" font-size="14" font-weight="bold" fill="#b45309">Ansible</text>
+    <text x="140" y="410" text-anchor="middle" font-size="12" fill="#333">ansible/playbook.yml</text>
+    <text x="140" y="428" text-anchor="middle" font-size="12" fill="#333">configures EC2 + deploys</text>
+  </g>
+
+  <!-- AWS cloud box -->
+  <g>
+    <rect x="310" y="70" width="660" height="540" rx="14" fill="#fff7ed" stroke="#ea7c28" stroke-width="2" stroke-dasharray="8 5"/>
+    <text x="640" y="96" text-anchor="middle" font-size="14" font-weight="bold" fill="#ea7c28">AWS — ap-south-1 (Free Tier)</text>
+
+    <!-- IGW -->
+    <rect x="340" y="120" width="160" height="60" rx="8" fill="#ffffff" stroke="#ea7c28" stroke-width="1.5"/>
+    <text x="420" y="144" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">Internet Gateway</text>
+    <text x="420" y="162" text-anchor="middle" font-size="11" fill="#666">+ Elastic IP</text>
+
+    <!-- Public subnet -->
+    <g>
+      <rect x="540" y="120" width="400" height="470" rx="10" fill="#eff6ff" stroke="#2b6cb0" stroke-width="1.5"/>
+      <text x="740" y="144" text-anchor="middle" font-size="13" font-weight="bold" fill="#2b6cb0">Public Subnet 10.0.1.0/24</text>
+      <text x="740" y="162" text-anchor="middle" font-size="11" fill="#666">Security Group: 22 / 80 / 443 / 3000 / 9090</text>
+
+      <!-- EC2 -->
+      <g>
+        <rect x="565" y="185" width="350" height="380" rx="10" fill="#ffffff" stroke="#16a34a" stroke-width="2"/>
+        <text x="740" y="210" text-anchor="middle" font-size="14" font-weight="bold" fill="#16a34a">EC2 t3.micro (Amazon Linux 2023)</text>
+        <text x="740" y="228" text-anchor="middle" font-size="11" fill="#666">docker compose -f docker-compose.prod.yml</text>
+
+        <rect x="585" y="245" width="310" height="56" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+        <text x="740" y="266" text-anchor="middle" font-size="12" font-weight="bold" fill="#14532d">nginx :80 — frontend static + /api proxy</text>
+        <text x="740" y="284" text-anchor="middle" font-size="11" fill="#333">http://&lt;elastic-ip&gt;  →  app URL</text>
+
+        <rect x="585" y="312" width="310" height="56" rx="8" fill="#e0f2fe" stroke="#0284c7"/>
+        <text x="740" y="333" text-anchor="middle" font-size="12" font-weight="bold" fill="#0c4a6e">backend :8000 — FastAPI + /metrics</text>
+        <text x="740" y="351" text-anchor="middle" font-size="11" fill="#333">16 stages API, instrumented for Prometheus</text>
+
+        <rect x="585" y="379" width="148" height="52" rx="8" fill="#fef3c7" stroke="#b45309"/>
+        <text x="659" y="399" text-anchor="middle" font-size="12" font-weight="bold" fill="#78350f">Prometheus :9090</text>
+        <text x="659" y="415" text-anchor="middle" font-size="11" fill="#333">scrapes backend /metrics</text>
+
+        <rect x="747" y="379" width="148" height="52" rx="8" fill="#fae8ff" stroke="#a21caf"/>
+        <text x="821" y="399" text-anchor="middle" font-size="12" font-weight="bold" fill="#701a75">Grafana :3000</text>
+        <text x="821" y="415" text-anchor="middle" font-size="11" fill="#333">App Health dashboard</text>
+
+        <rect x="585" y="442" width="310" height="44" rx="8" fill="#f1f5f9" stroke="#64748b"/>
+        <text x="740" y="460" text-anchor="middle" font-size="12" fill="#334155">node-exporter :9100 — host metrics</text>
+        <text x="740" y="476" text-anchor="middle" font-size="11" fill="#64748b">30 GB gp3 volume · 1 GB RAM budget</text>
+
+        <text x="740" y="548" text-anchor="middle" font-size="11" fill="#666">user_data: installs docker → clones repo → compose up</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Arrows: Terraform → AWS -->
+  <line x1="250" y1="275" x2="300" y2="275" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <!-- Arrows: Ansible → EC2 -->
+  <line x1="250" y1="405" x2="540" y2="420" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <!-- Arrows: GitHub → Terraform workflow -->
+  <line x1="140" y1="190" x2="140" y2="224" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <!-- Arrows: Internet → nginx (via IGW/EIP) -->
+  <text x="640" y="626" text-anchor="middle" font-size="12" fill="#555">User → http://&lt;elastic-ip&gt;/ → nginx :80 → /api/* proxied to backend :8000 · monitoring at :3000 / :9090</text>
+</svg>
