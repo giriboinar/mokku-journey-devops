@@ -1,0 +1,144 @@
+# ── raja-journey default values ────────────────────────────────────────────
+# Override per environment with values-staging.yaml / values-production.yaml.
+
+replicaCount: 2
+
+image:
+  # Replace <ACCOUNT_ID>/<REGION> with real values at deploy time, e.g.:
+  # helm upgrade --install ... --set image.repository=<ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/raja-journey-backend
+  repository: <ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/raja-journey-backend
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []   # ECR via node IAM role; add secret name here if needed
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations:
+    # Bind the pod identity to the IRSA role provisioned by Terraform.
+    eks.amazonaws.com/role-arn: "arn:aws:iam::<ACCOUNT_ID>:role/raja-journey-production-app"
+  name: ""
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8000"
+  prometheus.io/path: "/api/health"
+
+podSecurityContext:
+  fsGroup: 10001
+  runAsNonRoot: true
+  runAsUser: 10001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 10001
+  capabilities:
+    drop: ["ALL"]
+  seccompProfile:
+    type: RuntimeDefault
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8000
+
+ingress:
+  enabled: true
+  className: alb
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    # Attach your ACM certificate ARN for TLS:
+    # alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:<REGION>:<ACCOUNT_ID>:certificate/<CERT_ID>"
+  hosts:
+    - host: journey.example.com   # ← replace with your domain
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []   # e.g. [{secretName: raja-journey-tls, hosts: [journey.example.com]}]
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Probes hit the FastAPI health endpoint.
+livenessProbe:
+  httpGet:
+    path: /api/health
+    port: 8000
+  initialDelaySeconds: 20
+  periodSeconds: 15
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /api/health
+    port: 8000
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  failureThreshold: 3
+
+startupProbe:
+  httpGet:
+    path: /api/health
+    port: 8000
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  failureThreshold: 12
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+# Rolling update: always keep at least one pod serving.
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
+
+nodeSelector: {}
+tolerations: []
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values: ["raja-journey"]
+          topologyKey: kubernetes.io/hostname
+
+# Non-secret app configuration (see templates/configmap.yaml).
+config:
+  appName: raja-journey
+  appEnv: production
+  logLevel: info
+  stageDataPath: /app/data/stages.json
+
+# Secret values are NOT stored here. Provide them via an external secrets
+# operator (e.g. External Secrets → AWS Secrets Manager) or `kubectl create
+# secret`. See templates/secrets.yaml.
+secrets:
+  create: false

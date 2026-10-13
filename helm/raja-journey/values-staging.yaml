@@ -1,0 +1,34 @@
+# ── Staging overrides ──────────────────────────────────────────────────────
+replicaCount: 1
+
+ingress:
+  hosts:
+    - host: staging.journey.example.com   # ← replace with your domain
+      paths:
+        - path: /
+          pathType: Prefix
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+
+pdb:
+  enabled: false   # single replica — a PDB would block voluntary disruption
+
+config:
+  appEnv: staging
+  logLevel: debug
+
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: "arn:aws:iam::<ACCOUNT_ID>:role/raja-journey-staging-app"

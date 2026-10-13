@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "raja-journey.fullname" . }}-config
+  labels:
+    {{- include "raja-journey.labels" . | nindent 4 }}
+data:
+  # Non-secret configuration only. Secrets go in templates/secrets.yaml
+  # (sourced from AWS Secrets Manager / External Secrets in real clusters).
+  APP_NAME: {{ .Values.config.appName | quote }}
+  APP_ENV: {{ .Values.config.appEnv | quote }}
+  LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+  STAGE_DATA_PATH: {{ .Values.config.stageDataPath | quote }}
