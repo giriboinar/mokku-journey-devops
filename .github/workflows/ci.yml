@@ -88,6 +88,9 @@ jobs:
           format: sarif
           output: trivy-results.sarif
           severity: HIGH,CRITICAL
+          # Only fail on vulnerabilities that have a published fix; unpatched
+          # upstream CVEs are still reported to the Security tab via SARIF.
+          ignore-unfixed: true
           exit-code: "1"
 
       - name: Upload Trivy results
